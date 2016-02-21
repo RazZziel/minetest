@@ -16,6 +16,8 @@ if [[ $PLATFORM == "Unix" ]]; then
 		-DENABLE_GETTEXT=TRUE \
 		$CMAKE_FLAGS ..
 	make -j2
+	make package
+	make appimage
 	echo "Running unit tests."
 	../bin/minetest --run-unittests && exit 0
 elif [[ $PLATFORM == Win* ]]; then

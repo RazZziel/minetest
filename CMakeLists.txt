@@ -219,6 +219,41 @@ endif()
 include(CPack)
 
 
+if(UNIX AND NOT APPLE)
+	set(APPIMAGE_MINETEST_GAME "https://github.com/minetest/minetest_game/archive/0.4.13.tar.gz")
+	set(APPIMAGE_ASSISTANT "https://github.com/probonopd/AppImageKit/releases/download/5/AppImageAssistant") # 64-bit
+	set(APPIMAGE_ARCH "x86_64")
+	set(APPIMAGE_PACKAGE_NAME "${CPACK_PACKAGE_FILE_NAME}-${APPIMAGE_ARCH}.AppImage")
+
+	add_custom_target(appimage)
+	add_custom_command(TARGET appimage
+		COMMAND make package # This probably should be added as a dependency
+
+		# Unpack the CPack-generated package
+		COMMAND rm -rf "AppDir" "${APPIMAGE_PACKAGE_NAME}"
+		COMMAND tar -xf "${PROJECT_NAME}-${VERSION_STRING}-linux.tar.gz"
+		COMMAND mv "${PROJECT_NAME}-${VERSION_STRING}-linux" "AppDir"
+
+		# Download minetest_game
+		COMMAND wget -qc "${APPIMAGE_MINETEST_GAME}" -O "minetest_game.tar.gz"
+		COMMAND tar -xf "minetest_game.tar.gz"
+		COMMAND rm "minetest_game.tar.gz"
+		COMMAND mv minetest_game-* "AppDir/games/minetest_game"
+
+		# Add AppImage metadata
+		COMMAND cp "AppDir/unix/applications/minetest.desktop" "AppDir/AppRun.desktop"
+		COMMAND ln -sf ./bin/minetest AppDir/AppRun
+		COMMAND convert -resize 16x "AppDir/games/minetest_game/menu/icon.png" "AppDir/AppRun.png"
+		COMMAND sed -i -e 's|Icon=minetest|Icon=AppRun.png|' "AppDir/AppRun.desktop"
+
+		# Download AppImage packager
+		COMMAND wget -qc "${APPIMAGE_ASSISTANT}"
+		COMMAND chmod u+x "./AppImageAssistant"
+		COMMAND ./AppImageAssistant "AppDir" "${APPIMAGE_PACKAGE_NAME}"
+	)
+endif()
+
+
 # Add a target to generate API documentation with Doxygen
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
